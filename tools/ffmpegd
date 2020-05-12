@@ -1,0 +1,18 @@
+#!/bin/sh
+
+ffmpeg="$(
+	cat <<-'EOF'
+		read -r line
+		ffmpeg $line 2>&1 &
+		pid=$!
+
+		echo "running ffmpeg($pid)..." >&2
+		tail -f >/dev/null
+
+		echo "terminating ffmpeg($pid)..." >&2
+		kill -9 ${pid}
+	EOF
+)"
+
+ncat -v --sh-exec "${ffmpeg}" --listen 3367 --keep-open
+# socat -dd TCP-LISTEN:3367,fork SYSTEM:"'${ffmpeg}'"

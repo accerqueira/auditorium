@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -u
+
+# nginx
+nginx_cid=$(podman run -dit \
+	--ulimit=nofile=65536:65536 \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/nginx.conf,destination=/etc/nginx/nginx.conf,ro=true \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/conf-web.d,destination=/etc/nginx/conf-web.d,ro=true \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/conf-rtmp.d,destination=/etc/nginx/conf-rtmp.d,ro=true \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/modules/ngx_rtmp_module.so,destination=/etc/nginx/modules/ngx_rtmp_module.so,ro=true \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/html,destination=/usr/share/nginx/html,ro=true \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/media,destination=/usr/share/nginx/media,ro=true \
+	--mount=type=bind,source=${VOLUME_NGINX_LOGS},destination=/var/log/nginx \
+	--mount=type=bind,source=${VOLUME_LETSENCRYPT_DATA},destination=/etc/letsencrypt,ro=true \
+	--mount=type=tmpfs,tmpfs-size=2G,destination=/tmp \
+	--add-host=rtmp-n01:127.0.0.1 \
+	--add-host=ffmpegd:127.0.0.1 \
+	--publish=8080:80 --publish=8443:443 --publish=1935:1935 \
+	localhost/nginx:${NGINX_VERSION})
+
+# confd
+confd_cid=$(podman run -dit \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/conf-web.d,destination=/etc/nginx/conf-web.d \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/conf-rtmp.d,destination=/etc/nginx/conf-rtmp.d \
+	--mount=type=bind,source=${VOLUME_NGINX_CONFD_DATA},destination=/etc/confd/ \
+	--mount=type=bind,source=${VOLUME_DB_DATA},destination=/var/lib/db/ \
+	--pid=container:${nginx_cid} \
+	localhost/confd:${CONFD_VERSION})
+
+# ffmpegd
+ffmpegd_cid=$(podman run -dit \
+	--mount=type=bind,source=${VOLUME_NGINX_DATA}/media,destination=/usr/share/nginx/media \
+	--network=container:${nginx_cid} \
+	localhost/ffmpegd:${FFMPEG_VERSION})

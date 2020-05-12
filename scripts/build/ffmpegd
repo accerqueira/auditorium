@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+
+set -u
+
+cid=$(buildah from docker.io/jrottenberg/ffmpeg:${FFMPEG_VERSION}-alpine)
+
+buildah run ${cid} -- apk update --no-cache
+buildah run ${cid} -- apk add --no-cache nmap-ncat
+# buildah run ${cid} -- apt-get update
+# buildah run ${cid} -- apt-get upgrade -y
+# buildah run ${cid} -- apt-get install -y socat
+# buildah run ${cid} -- apt-get clean
+# buildah run ${cid} -- sh -c 'rm -rf /var/lib/apt/lists/*'
+
+buildah copy ${cid} ./tools/ffmpegd /usr/local/bin/
+
+buildah config --port 3367 ${cid}
+buildah config --entrypoint '[ "/usr/local/bin/ffmpegd" ]' ${cid}
+buildah config --cmd 'ffmpeg' ${cid}
+
+buildah commit ${cid} ffmpegd:${FFMPEG_VERSION}
+
+buildah rm ${cid}

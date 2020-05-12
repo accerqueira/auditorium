@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+TARGET=${1:-volumes/nginx/data/modules/}
+
+
+set -u
+
+buildah images --format '{{.Name}}:{{.Tag}}' | grep "localhost/nginx:${NGINX_VERSION}-deps"
+if [[ $? != "0" ]]; then
+	cid=$(buildah from docker.io/library/nginx:${NGINX_VERSION}-alpine)
+	cat <<-EOF | buildah run ${cid} -- sh
+		apk update --no-cache
+		apk add --no-cache alpine-sdk curl openssl-dev pcre-dev zlib-dev
+	EOF
+	buildah commit ${cid} nginx:${NGINX_VERSION}-deps
+else
+	cid=$(buildah from localhost/nginx:${NGINX_VERSION}-deps)
+fi
+
+cat <<EOF | buildah run ${cid} -- sh
+curl -#SL https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar xzC /tmp
+curl -#SL https://github.com/sergey-dryabzhinsky/nginx-rtmp-module/archive/dev.tar.gz | tar xzC /tmp
+
+cd /tmp/nginx-${NGINX_VERSION}/
+./configure --with-compat --add-dynamic-module=/tmp/nginx-rtmp-module-dev
+make modules
+EOF
+
+mkdir -p ${TARGET}
+buildah run ${cid} -- tar czC /tmp/nginx-${NGINX_VERSION}/objs/ ngx_rtmp_module.so | tar xzC ${TARGET}
+
+buildah rm ${cid}

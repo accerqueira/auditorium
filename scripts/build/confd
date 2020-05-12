@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+
+set -u
+
+cid=$(buildah from docker.io/library/alpine:3.11)
+
+buildah run ${cid} -- apk update --no-cache
+buildah run ${cid} -- apk add --no-cache curl
+
+buildah run ${cid} -- curl -#SL https://github.com/kelseyhightower/confd/releases/download/v${CONFD_VERSION}/confd-${CONFD_VERSION}-linux-amd64 -o /usr/local/bin/confd
+buildah run ${cid} -- chmod +x /usr/local/bin/confd
+
+buildah run ${cid} -- apk del --no-cache curl
+
+
+buildah config --entrypoint '[ "/usr/local/bin/confd" ]' ${cid}
+
+buildah commit ${cid} confd:${CONFD_VERSION}
+
+buildah rm ${cid}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Auditorium</title>
+  <link href="https://unpkg.com/video.js/dist/video-js.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/video.js/dist/video.min.js"></script>
+  <!--script src="https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js"></script-->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      text-align: center;
+      height: 100%;
+    }
+
+    #auditorium {
+      margin: 0px auto;
+      display: flex;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #video {
+      flex-grow: 1;
+      height: 100%;
+    }
+
+    #chat {
+      width: 350px;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="auditorium">
+    <video id="video" class="video-js vjs-default-skin vjs-big-play-centered" width="1024" height="720" controls autoplay preload="auto" data-setup='{"liveui": true}'>
+      <source src="hls/" type="application/x-mpegURL">
+      <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
+    </video>
+    <!--iframe id="chat" src="{{livechat_url}}"-->
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,92 @@
+{{- $domain := getv "/domain" -}}
+{{- $domain_parts := split (getv "/domain") "." -}}
+{{- $domain_prefix := index $domain_parts 0 -}}
+server {
+    listen                80;
+    listen                443 ssl http2;
+    ssl_certificate       /etc/letsencrypt/live/{{ $domain }}/fullchain.pem;
+    ssl_certificate_key   /etc/letsencrypt/live/{{ $domain }}/privkey.pem;
+    include conf-web.d/00-common/ssl_params.conf;
+
+    server_name  {{ $domain_prefix }} {{ $domain_prefix }}.*;
+
+    access_log    /var/log/nginx/{{ $domain_prefix }}.access.log    main buffer=32k flush=10s;
+    error_log     /var/log/nginx/{{ $domain_prefix }}.error.log                        notice;
+
+    # include conf-web.d/00-common/https_mandatory.conf;
+    #include conf-web.d/00-common/gzip_params.conf;
+
+    include conf-web.d/00-common/handle_large_headers.conf;
+    #include conf-web.d/00-common/handle_large_body.conf;
+
+
+    root /usr/share/nginx/html/;
+
+    location = / {
+        return 200 "";
+    }
+
+    location /watch {
+        location ~ ^/watch/(?<stream_id>[^/]+)$ {
+            return 302  " $uri/";
+        }
+
+        alias /usr/share/nginx/html/player/;
+
+        try_files index.html =404;
+    }
+
+    location ~ ^/watch/(?<stream_id>[^/]+)/hls(?<filename>/.*)?$ {
+        alias /tmp/hls/;
+
+        try_files $filename $stream_id/index.m3u8 $stream_id.m3u8 =404;
+
+        sendfile    off;
+        tcp_nopush   on;
+        aio          on;
+
+        add_header 'Cache-Control' 'no-cache';
+
+        include conf-web.d/00-common/real_ip_params.conf;
+
+        # CORS setup
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Expose-Headers' 'Content-Length';
+
+        # allow CORS preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        default_type application/octet-stream;
+
+        types {
+            application/dash+xml mpd;
+            application/vnd.apple.mpegurl m3u8;
+            video/mp2t ts;
+        }
+    }
+
+    location /ngx {
+        location /ngx/rtmp {
+            location /ngx/rtmp/stat {
+                rtmp_stat all;
+            }
+
+            location /ngx/rtmp/control {
+                rtmp_control all;
+            }
+        }
+
+        location /ngx/status {
+            stub_status;
+        }
+
+        allow 127.0.0.1;
+        deny  all;
+    }
+}
