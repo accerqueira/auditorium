@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TARGET=${1:-volumes/nginx/data/modules/}
+TARGET=${1:-${VOLUME_NGINX_DATA}/modules/}
 
 
 set -u
