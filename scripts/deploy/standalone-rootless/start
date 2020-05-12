@@ -2,6 +2,9 @@
 
 set -u
 
+
+mkdir -p ${VOLUME_NGINX_DATA}/conf-web.d ${VOLUME_NGINX_DATA}/conf-rtmp.d ${VOLUME_NGINX_DATA}/media ${VOLUME_NGINX_LOGS} ${VOLUME_LETSENCRYPT_DATA}
+
 # nginx
 nginx_cid=$(podman run -dit \
 	--ulimit=nofile=65536:65536 \
