@@ -30,12 +30,9 @@ People can watch in *almost* any browser. Powered by [video.js](https://github.c
         key: {{ $stream.key }}
     ```
   - replace the variables in curly braces:
-    - domain: where it will be hosted
-      - exemplo: auditorium.grana.guru
-    - stream.id: public identifier
-      - exemplo: `< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w12 | head -n1`
-    - stream.key: secret key, used by caster
-      - exemplo: `< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w32 | head -n1`
+    - domain: where it will be hosted (e.g.: auditorium.grana.guru)
+    - stream.id: public identifier (e.g.: `< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w12 | head -n1`)
+    - stream.key: secret key, used by caster (e.g.: `< /dev/urandom tr -dc 'a-zA-Z0-9' | fold -w32 | head -n1`)
 
 - Execute:
 
